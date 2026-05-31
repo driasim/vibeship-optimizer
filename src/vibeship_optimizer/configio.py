@@ -82,12 +82,16 @@ def write_config(path: Path, cfg: Dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     suffix = path.suffix.lower()
 
+    tmp = path.with_suffix('.tmp')
+
     if suffix in (".yml", ".yaml"):
         import yaml  # type: ignore
 
         text = yaml.safe_dump(cfg, sort_keys=False, allow_unicode=True)
-        path.write_text(text, encoding="utf-8")
+        tmp.write_text(text, encoding="utf-8")
+        tmp.replace(path)
         return
 
     # JSON
-    path.write_text(json.dumps(cfg, indent=2, ensure_ascii=False), encoding="utf-8")
+    tmp.write_text(json.dumps(cfg, indent=2, ensure_ascii=False), encoding="utf-8")
+    tmp.replace(path)
