@@ -513,6 +513,7 @@ def cmd_openclaw_cron_setup(args: argparse.Namespace) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="vibeship-optimizer", description="vibeship-optimizer: safe optimization workflow (snapshot + compare + verify)")
+    p.add_argument("--quiet", "-q", action="store_true", help="Suppress non-essential output")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     sp = sub.add_parser("init", help="Create .vibeship-optimizer config and VIBESHIP_OPTIMIZER.md template")
