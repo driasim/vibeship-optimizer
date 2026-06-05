@@ -10,6 +10,17 @@ from .core import git_info, iso_now, resolve_state_dir, run_cmd, write_json, wri
 from .logbook import change_path, load_change
 
 
+def _sanitize_filename(name: str) -> str:
+    """Strip path separators and dangerous characters from a filename component."""
+    keep = []
+    for ch in str(name or ""):
+        if ch.isalnum() or ch in ("-", "_", "."):
+            keep.append(ch)
+        else:
+            keep.append("_")
+    return "".join(keep).strip("._-") or "unknown"
+
+
 @dataclass
 class ReviewAttestation:
     change_id: str
@@ -35,7 +46,9 @@ class ReviewAttestation:
 
 def attestation_path(project_root: Path, change_id: str) -> Path:
     att_dir = resolve_state_dir(project_root) / "attestations"
-    return (project_root / att_dir / f"review_{change_id}.json").resolve()
+    # Sanitize change_id to prevent path traversal
+    safe_id = _sanitize_filename(change_id)
+    return (project_root / att_dir / f"review_{safe_id}.json").resolve()
 
 
 def load_attestation(path: Path) -> Dict[str, Any]:
