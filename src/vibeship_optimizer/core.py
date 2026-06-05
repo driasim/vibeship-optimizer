@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import platform
+import shlex
 import subprocess
 import sys
 import time
@@ -124,16 +125,20 @@ def which_git_root(cwd: Path) -> Optional[Path]:
 
 
 def run_cmd(cmd: str, cwd: Path, timeout_s: Optional[int] = None) -> Tuple[int, str, str, float]:
-    """Run a shell command with robust decoding.
+    """Run a command with robust decoding, passing args as a list.
+
+    Uses shlex.split to convert the command string to an args list,
+    avoiding shell injection by using shell=False.
 
     On Windows, subprocess defaults can raise UnicodeDecodeError when output
     contains non-cp1252 bytes. We force UTF-8 with replacement.
     """
     t0 = time.perf_counter()
+    args = shlex.split(cmd)
     proc = subprocess.run(
-        cmd,
+        args,
         cwd=str(cwd),
-        shell=True,
+        shell=False,
         capture_output=True,
         text=True,
         encoding="utf-8",
