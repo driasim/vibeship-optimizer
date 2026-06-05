@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 import time
 from dataclasses import dataclass
@@ -8,6 +9,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .core import iso_now, resolve_state_dir, write_json, write_text
+
+logger = logging.getLogger(__name__)
 
 
 def _slug(text: str, max_len: int = 48) -> str:
@@ -41,7 +44,7 @@ def load_change(path: Path) -> Dict[str, Any]:
         if isinstance(data, dict):
             return data
     except Exception:
-        pass
+        logger.warning("Failed to load change record: %s", path)
     return {}
 
 

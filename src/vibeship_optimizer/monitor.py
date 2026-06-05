@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -9,6 +10,8 @@ from typing import Any, Dict, Optional
 from .core import compare_snapshots, iso_now, read_json, render_compare_markdown, resolve_state_dir, snapshot, write_json, write_text
 from .configio import load_config_for_project
 from .logbook import change_path, load_change
+
+logger = logging.getLogger(__name__)
 
 
 def _utc_date() -> str:
@@ -175,7 +178,7 @@ def tick_monitor(
             if isinstance(main, dict):
                 summary = f"sizes delta={int(main.get('delta_bytes') or 0):+d} bytes"
     except Exception:
-        pass
+        logger.warning("Failed to compute size delta summary", exc_info=True)
 
     _append_verification_update(
         checker_path=checker_path,
@@ -210,7 +213,7 @@ def tick_monitor(
             ch["verification_updates"] = history[-30:]
             write_json(ch_path, ch)
     except Exception:
-        pass
+        logger.warning("Failed to update change JSON with monitor data", exc_info=True)
 
     return {
         "skipped": False,
