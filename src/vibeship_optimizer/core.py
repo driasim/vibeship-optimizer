@@ -370,6 +370,16 @@ def snapshot(
         url = str(pr.get("url") or "").strip()
         if not url:
             continue
+        # SSRF protection: only allow http/https URLs
+        if not url.lower().startswith(("http://", "https://")):
+            snap["http"].append({
+                "url": url,
+                "timeout_s": int(pr.get("timeout_s") or 5),
+                "ok": False,
+                "status": None,
+                "error": f"blocked: non-http(s) scheme in url: {url[:100]}",
+            })
+            continue
         expect = str(pr.get("expect_contains") or "").strip()
         timeout_s = int(pr.get("timeout_s") or 5)
         res = {
