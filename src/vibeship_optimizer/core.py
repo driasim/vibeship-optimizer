@@ -1,15 +1,19 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import platform
 import subprocess
 import sys
+import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_DIR = Path(".vibeship-optimizer")
 SNAPSHOT_DIR = DEFAULT_DIR / "snapshots"
@@ -107,9 +111,25 @@ def read_json(path: Path) -> Dict[str, Any]:
 
 def write_json(path: Path, data: Dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
-    os.replace(str(tmp), str(path))
+    tmp = tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        prefix=path.name + ".",
+        suffix=".tmp",
+        dir=path.parent,
+        delete=False,
+    )
+    try:
+        json.dump(data, tmp, indent=2, ensure_ascii=False)
+        tmp.close()
+        os.replace(tmp.name, str(path))
+    except BaseException:
+        # Clean up temp file on failure.
+        try:
+            os.unlink(tmp.name)
+        except Exception:
+            pass
+        raise
 
 
 def which_git_root(cwd: Path) -> Optional[Path]:
@@ -151,6 +171,7 @@ def dir_size_bytes(path: Path) -> int:
         try:
             return path.stat().st_size
         except Exception:
+            logger.debug("Could not stat %s", path, exc_info=True)
             return 0
     total = 0
     for root, _dirs, files in os.walk(path):
@@ -159,7 +180,7 @@ def dir_size_bytes(path: Path) -> int:
             try:
                 total += p.stat().st_size
             except Exception:
-                pass
+                logger.debug("Could not stat %s during dir_size_bytes", p, exc_info=True)
     return int(total)
 
 
@@ -178,7 +199,7 @@ def git_info(project_root: Path) -> Dict[str, Any]:
             if rc == 0:
                 return (out or "").strip()
         except Exception:
-            pass
+            logger.debug("git_info command failed: %s", cmd, exc_info=True)
         return ""
 
     info["branch"] = _try("git rev-parse --abbrev-ref HEAD")
