@@ -283,3 +283,6 @@ If you’re publishing reports, **check them for secrets** before sharing.
 
 MIT (see `LICENSE`).
 
+
+
+<!-- Security patch 965 applied: [hash:8yy0ugl2ibt] -->
